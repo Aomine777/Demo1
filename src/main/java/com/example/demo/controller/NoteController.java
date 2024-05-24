@@ -1,42 +1,53 @@
 package com.example.demo.controller;
 
-import com.example.demo.entities.Note;
-import com.example.demo.services.NoteCrudServiceImpl;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
-@Controller
-@RequestMapping("/note")
+import com.example.demo.dto.AddNoteRequest;
+import com.example.demo.dto.UpdateRequest;
+import com.example.demo.entity.Note;
+import com.example.demo.service.NoteService;
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/notes")
+@Slf4j
 public class NoteController {
-    private final NoteCrudServiceImpl noteCrudService;
 
-    public NoteController(NoteCrudServiceImpl noteCrudService) {
-        this.noteCrudService = noteCrudService;
-    }
-    @GetMapping("/list")
-    public String list(Model model){
-        model.addAttribute("notes", noteCrudService.listAll());
-        return "note-list";
-    }
-    @PostMapping("/delete")
-    public String delete (@RequestParam Long id){
-        noteCrudService.deleteById(id);
-        return "redirect:/note/list";
-    }
-    @GetMapping("/edit")
-    public String edit(@RequestParam Long id, Model model){
-        Note note = noteCrudService.getById(id);
-        model.addAttribute("note", note);
-        return "note-edit";
+    @Autowired
+    NoteService noteService;
+
+    @GetMapping
+    public List<Note> getAllNotes() {
+        return noteService.listAll();
     }
 
-    @PostMapping("/update")
-    public String update(Note note){
-        noteCrudService.update(note);
-        return "redirect:/note/list";
+    @PostMapping
+    public Note addNote(@Valid @RequestBody AddNoteRequest addNoteRequest) {
+        Note newNote = new Note(null, addNoteRequest.getTitle(), addNoteRequest.getContent());
+        noteService.add(newNote);
+
+        return newNote;
+    }
+
+    @GetMapping("/{id}")
+    public Note getNoteById(@PathVariable Long id) {
+        return noteService.getById(id);
+    }
+
+    @PutMapping("/{id}")
+    public Note updateNote(@PathVariable Long id, @Valid @RequestBody UpdateRequest updateNoteRequest) {
+        Note note = new Note(id, updateNoteRequest.getTitle(), updateNoteRequest.getContent());
+        noteService.update(note);
+        return note;
+    }
+
+
+    @DeleteMapping("/{id}")
+    public void deleteNote(@PathVariable Long id) {
+        noteService.deleteById(id);
     }
 }
